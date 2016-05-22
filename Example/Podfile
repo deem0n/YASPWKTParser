@@ -1,0 +1,6 @@
+use_frameworks!
+target 'YASPWKTParser_Tests' do
+  pod 'YASPWKTParser', :path => '../'
+  
+  
+end
