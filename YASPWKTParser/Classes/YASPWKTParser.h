@@ -7,7 +7,12 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <MapKit/MapKit.h>
 
 @interface YASPWKTParser : NSObject
+
++ (MKPolygon *)parsePolygon:(NSString *)wkt;
++ (NSArray<MKPolygon *>*)parseMultiPolygon:(NSString *)wkt;
++ (NSArray<MKPolygon *>*)parseAnyPolygon:(NSString *)wkt;
 
 @end

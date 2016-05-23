@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2EDE72781CF2F58900C12632 /* multipolygon1.wkt in Resources */ = {isa = PBXBuildFile; fileRef = 2EDE72771CF2F58900C12632 /* multipolygon1.wkt */; };
 		584515DAA1EFC957B2E0D031 /* Pods_YASPWKTParser_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 052D9D4D70AEB8D8FBC9632E /* Pods_YASPWKTParser_Tests.framework */; };
 		6003F5B0195388D20070C39A /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F5AF195388D20070C39A /* XCTest.framework */; };
 		6003F5B1195388D20070C39A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F58D195388D20070C39A /* Foundation.framework */; };
@@ -17,6 +18,7 @@
 
 /* Begin PBXFileReference section */
 		052D9D4D70AEB8D8FBC9632E /* Pods_YASPWKTParser_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_YASPWKTParser_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		2EDE72771CF2F58900C12632 /* multipolygon1.wkt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = multipolygon1.wkt; sourceTree = "<group>"; };
 		3244092D2D1C4672E0C3C0EC /* YASPWKTParser.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = YASPWKTParser.podspec; path = ../YASPWKTParser.podspec; sourceTree = "<group>"; };
 		6003F58D195388D20070C39A /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		6003F58F195388D20070C39A /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -91,6 +93,7 @@
 		6003F5B6195388D20070C39A /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
+				2EDE72771CF2F58900C12632 /* multipolygon1.wkt */,
 				6003F5B7195388D20070C39A /* Tests-Info.plist */,
 				6003F5B8195388D20070C39A /* InfoPlist.strings */,
 				606FC2411953D9B200FFA9A0 /* Tests-Prefix.pch */,
@@ -178,6 +181,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2EDE72781CF2F58900C12632 /* multipolygon1.wkt in Resources */,
 				6003F5BA195388D20070C39A /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
