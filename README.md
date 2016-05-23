@@ -1,6 +1,6 @@
 # YASPWKTParser
 
-**Please note: it had not been submitted to cocoapods repo yet!**
+**Please note: it have not been submitted to cocoapods repo yet!**
 
 [![CI Status](http://img.shields.io/travis/Dmitry Dorofeev/YASPWKTParser.svg?style=flat)](https://travis-ci.org/Dmitry Dorofeev/YASPWKTParser)
 [![Version](https://img.shields.io/cocoapods/v/YASPWKTParser.svg?style=flat)](http://cocoapods.org/pods/YASPWKTParser)
