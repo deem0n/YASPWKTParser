@@ -17,7 +17,7 @@ Also, I did not find any parser which reports back parse errors and position in 
 * error prone
 * memory efficient
 
-Instead of two-pass parsing I use NSScanner and C-arrays to store parsed coordinates. It is both fast and memory efficient. This implementation is 4 times faster than https://github.com/alejandrofcarrera/WKTParser
+Instead of two-pass parsing I use NSScanner and C-arrays to store parsed coordinates. It is both fast and memory efficient. For example, this implementation is 4 times faster than [WKTParser](https://github.com/alejandrofcarrera/WKTParser) (As of June 2016).
 
 ## Example
 
@@ -36,7 +36,7 @@ pod "YASPWKTParser"
 
 ## Author
 
-Dmitry Dorofeev, dima@yasp.com
+Dmitry Dorofeev, dima <аt> yasp.com
 
 ## License
 
