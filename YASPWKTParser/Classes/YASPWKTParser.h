@@ -11,8 +11,8 @@
 
 @interface YASPWKTParser : NSObject
 
-+ (MKPolygon *)parsePolygon:(NSString *)wkt;
-+ (NSArray<MKPolygon *>*)parseMultiPolygon:(NSString *)wkt;
-+ (NSArray<MKPolygon *>*)parseAnyPolygon:(NSString *)wkt;
++ (MKPolygon * _Nullable)parsePolygon:(NSString * _Nonnull)wkt error:(NSError * _Nullable * _Nullable)error;
++ (NSArray<MKPolygon *> * _Nullable)parseMultiPolygon:(NSString * _Nonnull)wkt error:(NSError * _Nullable * _Nullable)error;
++ (NSArray<MKPolygon *> * _Nullable)parseAnyPolygon:(NSString * _Nonnull)wkt error:(NSError * _Nullable * _Nullable)error;
 
 @end

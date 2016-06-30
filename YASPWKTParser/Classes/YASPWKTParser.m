@@ -18,35 +18,33 @@ struct YASPWKTParsedCoordinatesStruct {
 typedef struct YASPWKTParsedCoordinatesStruct YASPWKTParsedCoordinates;
 
 
+static NSString * YASPWKTunderlyingErrorDomain = @"YASPWKTTextScanner";
+static NSString * YASPWKTerrorDomain = @"YASPWKTParser";
+
 @implementation YASPWKTParser
 
-+ (MKPolygon *)parsePolygon:(NSString *)wkt {
++ (MKPolygon * _Nullable)parsePolygon:(NSString * _Nonnull)wkt error:(NSError * _Nullable * _Nullable)error {
     // Polygon has exterior and possibly one or more "holes" in it.
     NSScanner * scanner = [[NSScanner alloc] initWithString:wkt];
     
-    // SRID=4326;MULTIPOLYGON(((136.695770298061 -15.7398658176533,136.663834263341 -15.7785714658004,
-    // MULTIPOLYGON ( ((10 10, 10 20, 20 20, 20 15, 10 10)), ((60 60, 70 70, 80 60, 60 60 )) )
-    
-    if (nil == [self parseSRIDWith: scanner]) {
+    if (nil == [self parseSRIDWith: scanner error:error]) {
         return nil;
     }
     
-    if ( ![scanner scanString:@"POLYGON" intoString:NULL] ) {
+    if ( [scanner scanString:@"POLYGON" intoString:NULL] == NO) {
         NSLog(@"NOT A WKT format!!! No POLYGON keyword");
         return nil;
     }
     
     
-    MKPolygon * polygon = [self parsePolygonCoordinatesWith: scanner];
-    
-    return polygon;
+    return [self parsePolygonCoordinatesWith:scanner error:error];
 
 }
 
-+ (NSArray<MKPolygon *>*)parseMultiPolygon:(NSString *)wkt {
++ (NSArray<MKPolygon *> * _Nullable)parseMultiPolygon:(NSString * _Nonnull)wkt error:(NSError * _Nullable * _Nullable)error {
     NSScanner * scanner = [[NSScanner alloc] initWithString:wkt];
     
-    if (nil == [self parseSRIDWith: scanner]) {
+    if (nil == [self parseSRIDWith: scanner error:error]) {
         return nil;
     }
     
@@ -55,48 +53,66 @@ typedef struct YASPWKTParsedCoordinatesStruct YASPWKTParsedCoordinates;
         return nil;
     }
     
+    return [self continueMultiPolygonParsingWith:scanner wkt:wkt error:error];
+    
+}
+
++ (NSArray<MKPolygon *> * _Nullable)parseAnyPolygon:(NSString * _Nonnull)wkt error:(NSError * _Nullable * _Nullable)error {
+    NSScanner * scanner = [[NSScanner alloc] initWithString:wkt];
+    
+    if (nil == [self parseSRIDWith: scanner error:error]) {
+        return nil;
+    }
+    
+    if ( [scanner scanString:@"MULTIPOLYGON" intoString:NULL] ) {
+        return [self continueMultiPolygonParsingWith:scanner wkt:wkt error:error];
+    } else if ([scanner scanString:@"POLYGON" intoString:NULL]) {
+        MKPolygon * polygon = [self parsePolygonCoordinatesWith:scanner error:error];
+        if (nil != polygon) {
+            return @[polygon];
+        } else {
+            return nil;
+        }
+    } else {
+        *error = [self errorWithCode:3 message:@"Not a WKT format! Missed POLYGON/MULTIPOLYGON keyword" scanner:scanner];
+        return nil;
+    }
+
+}
+
++ (NSArray<MKPolygon *>*)continueMultiPolygonParsingWith: (NSScanner*)scanner wkt:(NSString *)wkt error:(NSError * _Nullable *)error {
+ 
     if ( ![scanner scanString:@"(" intoString:NULL] ) {
-        NSLog(@"NOT A WKT format!!! No ( after MULTIPOLYGON");
+        *error = [self errorWithCode:4 message:@"NOT A WKT format!!! No ( after MULTIPOLYGON" scanner: scanner];
         return nil;
     };
     
-    NSMutableArray * polygons = [[NSMutableArray alloc] initWithCapacity: 16];
+    NSMutableArray * polygons = [[NSMutableArray alloc] initWithCapacity:16];
     MKPolygon * polygon;
-    while (nil != (polygon = [self parsePolygonCoordinatesWith:scanner])) {
+    while (nil != (polygon = [self parsePolygonCoordinatesWith:scanner error:error])) {
         [polygons addObject:polygon];
         if ( ![scanner scanString:@"," intoString:NULL] ) {
             break;
         }
     };
     
-    return [polygons copy];
-}
-
-+ (NSArray<MKPolygon *>*)parseAnyPolygon:(NSString *)wkt {
-    NSScanner * scanner = [[NSScanner alloc] initWithString:wkt];
-    
-    if (nil == [self parseSRIDWith: scanner]) {
+    if (nil == *error) {
+        if ( ![scanner scanString:@")" intoString:NULL] ) {
+            *error = [self errorWithCode:15 message:@"NOT A WKT format!!! MULTIPLOLYGON do not end with )" scanner: scanner];
+            return nil;
+        };
+        return [polygons copy];
+    } else {
         return nil;
     }
-    
-    if ( [scanner scanString:@"MULTIPOLYGON" intoString:NULL] ) {
-        return [self parseMultiPolygon:wkt];
-    } else if ([scanner scanString:@"POLYGON" intoString:NULL]) {
-        MKPolygon * polygon = [self parsePolygon:wkt];
-        if (nil == polygon) {
-            return nil;
-        } else {
-            return @[polygon];
-        }
-    }
-
 }
 
-+ (MKPolygon*) parsePolygonCoordinatesWith: (NSScanner*) scanner {
+
++ (MKPolygon*) parsePolygonCoordinatesWith: (NSScanner*)scanner error:(NSError * _Nullable * _Nullable)error {
     // beware: dynamically allocated C array here!
     
     if ( ![scanner scanString:@"(" intoString:NULL] ) {
-        NSLog(@"NOT A WKT format!!! Polygon coordinates do not start with (");
+        *error = [self errorWithCode:5 message:@"NOT A WKT format!!! Polygon coordinates do not start with (" scanner: scanner];
         return nil;
     };
     
@@ -106,7 +122,7 @@ typedef struct YASPWKTParsedCoordinatesStruct YASPWKTParsedCoordinates;
     // beware: may return pointer to the different array !!!
     YASPWKTParsedCoordinates pointsStruct = {points, 0, arraySize};
     
-    pointsStruct = [self parseWKTPointsWith: scanner usingStruct: pointsStruct];
+    pointsStruct = [self parseWKTPointsWith: scanner usingStruct: pointsStruct error: error];
     
     if (pointsStruct.array_size == 0) {
         NSLog(@"Can not parse coordinates for the WKT polygon.");
@@ -123,7 +139,7 @@ typedef struct YASPWKTParsedCoordinatesStruct YASPWKTParsedCoordinates;
         // beware: may return pointer to the different array !!!
         YASPWKTParsedCoordinates holePointsStruct = {holePoints, 0, arraySize};
         
-        holePointsStruct = [self parseWKTPointsWith: scanner usingStruct: holePointsStruct];
+        holePointsStruct = [self parseWKTPointsWith: scanner usingStruct: holePointsStruct error: error];
         
         if (holePointsStruct.array_size == 0) {
             NSLog(@"Can not parse coordinates for the hole WKT polygon.");
@@ -144,23 +160,22 @@ typedef struct YASPWKTParsedCoordinatesStruct YASPWKTParsedCoordinates;
     free(pointsStruct.points);
     
     if ( ![scanner scanString:@")" intoString:NULL] ) {
-        NSLog(@"NOT A WKT format!!! Polygon coordinates do not end with )");
+        *error = [self errorWithCode:10 message:@"NOT A WKT format!!! Polygon coordinates do not end with )" scanner: scanner];
         return nil;
     };
     
     return polygon;
 }
 
-+ (NSNumber*) parseSRIDWith: (NSScanner*) scanner {
++ (NSNumber*) parseSRIDWith:(NSScanner*) scanner error:(NSError * _Nullable * _Nullable)error {
     if ( [scanner scanString:@"SRID=" intoString:NULL] ) {
         NSUInteger srid;
-        if ( ![scanner scanInteger: &srid] ) {
-            NSLog(@"NOT A WKT format!!! NO SRID Value");
+        if ( [scanner scanInteger: &srid] == NO ) {
+            *error = [self errorWithCode:1 message:@"Not a WKT format! NO SRID Value" scanner: scanner];
             return nil;
         } else {
-            NSLog(@"SRID: %d", srid);
-            if ( ![scanner scanString:@";" intoString:NULL] ) {
-                NSLog(@"NOT A WKT format!!! SRID Value not terminated with ;");
+            if ( [scanner scanString:@";" intoString:NULL] == NO ) {
+                *error = [self errorWithCode:2 message:@"Not a WKT format! SRID Value not terminated with ;" scanner: scanner];
                 return nil;
             }
         }
@@ -169,12 +184,12 @@ typedef struct YASPWKTParsedCoordinatesStruct YASPWKTParsedCoordinates;
     return @0; // means no SRID part
 }
 
-+ (YASPWKTParsedCoordinates) parseWKTPointsWith: (NSScanner*) scanner usingStruct: (YASPWKTParsedCoordinates) pointsArray {
++ (YASPWKTParsedCoordinates) parseWKTPointsWith: (NSScanner*) scanner usingStruct: (YASPWKTParsedCoordinates) pointsArray error:(NSError * _Nullable * _Nullable)error{
     
     
     if (![scanner scanString:@"(" intoString:NULL]) {
         pointsArray.point_count = pointsArray.array_size = 0; // means error !!!
-        NSLog(@"POLYGON coordinates do not start with (");
+        *error = [self errorWithCode:6 message:@"POLYGON coordinates do not start with (" scanner: scanner];
         return pointsArray;
     }
     
@@ -188,7 +203,7 @@ typedef struct YASPWKTParsedCoordinatesStruct YASPWKTParsedCoordinates;
                 lon = (float)tmp;
             } else {
                 pointsArray.point_count = pointsArray.array_size = 0; // means error !!!
-                NSLog(@"POLYGON can not parse longitude value");
+                *error = [self errorWithCode:7 message:@"POLYGON can not parse longitude value" scanner: scanner];
                 return pointsArray;
             }
         }
@@ -197,7 +212,7 @@ typedef struct YASPWKTParsedCoordinatesStruct YASPWKTParsedCoordinates;
                 lat = (float)tmp;
             } else {
                 pointsArray.point_count = pointsArray.array_size = 0; // means error !!!
-                NSLog(@"POLYGON can not parse latitude value");
+                *error = [self errorWithCode:8 message:@"POLYGON can not parse latitude value" scanner: scanner];
                 return pointsArray;
             }
         }
@@ -213,12 +228,58 @@ typedef struct YASPWKTParsedCoordinatesStruct YASPWKTParsedCoordinates;
     
     if ( ![scanner scanString:@")" intoString:NULL] ) {
         pointsArray.point_count = pointsArray.array_size = 0; // means error !!!
-        NSLog(@"POLYGON coordinates do not end with )");
+        *error = [self errorWithCode:9 message:@"POLYGON coordinates do not end with )" scanner: scanner];
         return pointsArray;
     }
     
     pointsArray.point_count = i;
     return pointsArray;
+}
+
++ (NSError*) errorWithCode:(NSInteger)code message:(NSString *)message scanner:(NSScanner *)scanner {
+    // generate underlying error with scanner...
+    NSUInteger start,end;
+    start = end = scanner.scanLocation;
+    if (start < 40) {
+        start = 0;
+    } else {
+        start-=40;
+    }
+    
+    if ( scanner.string.length - end > 40 ) {
+        end += 40;
+    } else {
+        end = scanner.string.length;
+    }
+    
+    NSString * wktPart = [scanner.string substringWithRange: NSMakeRange(start, end-start)];
+    NSString * scannerPositionPointer = [@"" stringByPaddingToLength:(scanner.scanLocation - start)
+                                                          withString:@"∿"
+                                                     startingAtIndex:0];
+    
+    NSString * parserError = [NSString stringWithFormat:
+                              @"Parse error in WKT at symbol %d\n"
+                              @"%@\n"
+                              @"%@💣",
+                              1+scanner.scanLocation,
+                              wktPart,
+                              scannerPositionPointer
+                              ];
+    
+    NSError * underlyingError = [NSError errorWithDomain:YASPWKTunderlyingErrorDomain
+                                                    code:code
+                                                userInfo:@{
+                                                           NSLocalizedDescriptionKey : parserError
+                                                           }
+                                 ];
+    
+    return [NSError errorWithDomain:YASPWKTerrorDomain
+                               code:code
+                           userInfo:@{
+                                      NSLocalizedDescriptionKey : message,
+                                      NSUnderlyingErrorKey : underlyingError
+                                      }
+            ];
 }
 
 @end
